@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Fish, LayoutDashboard, UtensilsCrossed, ShoppingCart, Settings, LogOut } from 'lucide-react';
+import { Fish, LayoutDashboard, UtensilsCrossed, ShoppingCart, ChefHat, Calendar, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -47,11 +47,25 @@ export function AdminNavbar() {
             Menú
           </Link>
           <Link
+            href="/admin/daily-menu"
+            className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary"
+          >
+            <Calendar className="h-4 w-4" />
+            Menú Diario
+          </Link>
+          <Link
             href="/admin/orders"
             className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary"
           >
             <ShoppingCart className="h-4 w-4" />
             Pedidos
+          </Link>
+          <Link
+            href="/admin/kitchen"
+            className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary"
+          >
+            <ChefHat className="h-4 w-4" />
+            Cocina
           </Link>
           <Button
             variant="ghost"

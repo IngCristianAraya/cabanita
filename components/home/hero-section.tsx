@@ -1,98 +1,117 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Clock, MapPin, Phone } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Phone, Truck, Utensils, Leaf } from 'lucide-react';
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100">
-      {/* Background image - configuración para imagen ancha con poca altura */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background Image - Banner real de La Cabañita */}
       <div
         className="absolute inset-0 w-full h-full"
         style={{
-          backgroundImage: `url('https://res.cloudinary.com/do2rpqupm/image/upload/v1759536903/hero_caba%C3%B1ita_zaffem.png')`,
+          backgroundImage: `url('/images/hero_cabañita.png')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center center',
           backgroundRepeat: 'no-repeat',
-          minHeight: '100vh',
         }}
       />
-      {/* Overlay más sutil para mejor legibilidad */}
-      <div className="absolute inset-0 bg-black/15" />
+      {/* Overlay para mejor legibilidad */}
+      <div className="absolute inset-0 bg-black/40" />
 
-      {/* Content */}
-      <div className="container relative z-10 text-center">
-        <div className="max-w-3xl mx-auto text-white">
-          {/* Logo - replicando el diseño del banner de Facebook */}
-          <div className="flex justify-center mb-8">
-            <div className="relative">
+      <div className="container mx-auto px-4 py-20 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Content */}
+          <div className="text-center lg:text-left space-y-8">
+            {/* Logo */}
+            <div className="flex justify-center lg:justify-start mb-8">
               <Image
                 src="/images/logo_cabañita.png"
-                alt="La Cabañita Logo"
-                width={700}
-                height={700}
-                className="object-contain drop-shadow-2xl max-w-lg md:max-w-2xl lg:max-w-3xl"
+                alt="La Cabañita"
+                width={200}
+                height={120}
+                className="h-24 w-auto drop-shadow-2xl"
                 priority
               />
             </div>
-          </div>
 
-          <p className="text-xl md:text-2xl text-amber-50 mb-6 font-medium drop-shadow-lg">
-            Tu paladar nuestra inspiración...!!!
-          </p>
+            <div className="space-y-6">
+              <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight drop-shadow-lg">
+                <span className="text-teal-300">La</span>{' '}
+                <span className="text-yellow-300">Cabañita</span>
+              </h1>
+              
+              <p className="text-xl lg:text-2xl text-teal-100 font-medium italic drop-shadow-md">
+                "Tu paladar es nuestra inspiración"
+              </p>
 
-          {/* Delivery Badge - centrado como en el banner */}
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="flex items-center gap-2 bg-teal-500/90 text-white px-6 py-3 rounded-full shadow-xl">
-              <Truck className="h-5 w-5" />
-              <span className="font-semibold text-sm md:text-base">DELIVERY O RECOJO EN TIENDA</span>
+              <p className="text-lg text-white max-w-2xl drop-shadow-md">
+                Descubre los auténticos sabores del mar peruano y la cocina criolla. 
+                Ceviches frescos, platos tradicionales y la mejor experiencia gastronómica 
+                te esperan en cada bocado.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <Link href="/menu">
+                <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 text-lg shadow-xl">
+                  Ver Menú
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/cart">
+                <Button variant="outline" size="lg" className="border-yellow-400 text-yellow-300 hover:bg-yellow-400 hover:text-gray-900 px-8 py-4 text-lg shadow-xl backdrop-blur-sm bg-white/10">
+                  Hacer Pedido
+                </Button>
+              </Link>
+            </div>
+
+            {/* Contact Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 border-t border-white/20">
+              <div className="flex items-center justify-center lg:justify-start gap-2 text-white">
+                <Phone className="h-5 w-5 text-teal-300" />
+                <span className="text-sm drop-shadow-md">+51 945 152 916</span>
+              </div>
+              <div className="flex items-center justify-center lg:justify-start gap-2 text-white">
+                <Clock className="h-5 w-5 text-yellow-300" />
+                <span className="text-sm drop-shadow-md">11:00 AM - 10:00 PM</span>
+              </div>
+              <div className="flex items-center justify-center lg:justify-start gap-2 text-white">
+                <MapPin className="h-5 w-5 text-gray-300" />
+                <span className="text-sm drop-shadow-md">Lima, Perú</span>
+              </div>
             </div>
           </div>
 
-          {/* Phone - más prominente como en el banner */}
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <Phone className="h-7 w-7 text-teal-400" />
-            <span className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">945152916</span>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
-            <Link href="/menu">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white text-lg px-8 py-4 shadow-xl transition-transform duration-300 hover:scale-105"
-              >
-                Ver Menú del Día
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/cart">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto border-2 border-teal-500 text-teal-400 hover:bg-teal-500 hover:text-white text-lg px-8 py-4 shadow-xl transition-transform duration-300 hover:scale-105"
-              >
-                Hacer Pedido
-              </Button>
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="grid gap-6 sm:grid-cols-3 text-center">
-            <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200 p-6 shadow-xl">
-              <Utensils className="mx-auto mb-3 h-8 w-8 text-yellow-500" />
-              <div className="text-4xl font-bold text-yellow-500">15+</div>
-              <div className="mt-2 text-gray-600 font-medium">Platos Frescos</div>
+          {/* Ceviche Image - Plato estrella */}
+          <div className="relative">
+            <div className="relative z-10 bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
+              <div className="aspect-square rounded-2xl overflow-hidden">
+                <Image
+                  src="/images/ceviche.jpg"
+                  alt="Ceviche Fresco - Plato Estrella de La Cabañita"
+                  width={400}
+                  height={400}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="text-center mt-4 space-y-2">
+                <h3 className="text-2xl font-bold text-gray-800">Ceviche Fresco</h3>
+                <p className="text-gray-600">Nuestro plato estrella preparado al momento</p>
+                <div className="bg-teal-600 text-white px-6 py-2 rounded-full text-lg font-semibold">
+                  Desde S/ 18.00
+                </div>
+              </div>
             </div>
-            <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200 p-6 shadow-xl">
-              <Truck className="mx-auto mb-3 h-8 w-8 text-green-600" />
-              <div className="text-4xl font-bold text-green-600">30min</div>
-              <div className="mt-2 text-gray-600 font-medium">Delivery Rápido</div>
+            
+            {/* Floating Elements */}
+            <div className="absolute -top-4 -right-4 bg-yellow-400 text-white p-4 rounded-full shadow-lg animate-bounce">
+              <span className="text-2xl">🦐</span>
             </div>
-            <div className="rounded-2xl bg-white/90 backdrop-blur border border-gray-200 p-6 shadow-xl">
-              <Leaf className="mx-auto mb-3 h-8 w-8 text-green-500" />
-              <div className="text-4xl font-bold text-green-500">100%</div>
-              <div className="mt-2 text-gray-600 font-medium">Ingredientes Naturales</div>
+            <div className="absolute -bottom-4 -left-4 bg-teal-500 text-white p-4 rounded-full shadow-lg animate-pulse">
+              <span className="text-2xl">🐙</span>
             </div>
           </div>
         </div>

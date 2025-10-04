@@ -334,3 +334,13 @@ export type Order = Database['public']['Tables']['orders']['Row'];
 export type OrderItem = Database['public']['Tables']['order_items']['Row'];
 export type DeliveryZone = Database['public']['Tables']['delivery_zones']['Row'];
 export type Restaurant = Database['public']['Tables']['restaurants']['Row'];
+
+export interface LocalSales {
+  id: string;
+  date: string;
+  total_amount: number;
+  estimated_orders?: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}

@@ -1,31 +1,41 @@
-import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, ShoppingCart, UtensilsCrossed, TrendingUp } from 'lucide-react';
-import { Order } from '@/lib/database.types';
+'use client';
 
-export const revalidate = 0;
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { 
+  DollarSign, 
+  ShoppingCart, 
+  TrendingUp, 
+  Users,
+  Store,
+  Globe
+} from "lucide-react";
+import { LocalSalesForm } from "@/components/admin/local-sales-form";
+import { WhatsAppPanel } from "@/components/admin/whatsapp-panel";
+import { BusinessReports } from "@/components/admin/business-reports";
+import { demoData } from "@/lib/demo-data";
+import { supabase } from "@/lib/supabase";
+import { Order } from "@/lib/database.types";
 
+// Función para obtener datos del dashboard (modo demo)
 async function getDashboardData() {
+  // Simulando datos en tiempo real
   const today = new Date().toISOString().split('T')[0];
-  const thisMonth = new Date().toISOString().slice(0, 7);
-
-  const [ordersResult, todayOrdersResult, monthOrdersResult, menuItemsResult] = await Promise.all([
-    supabase.from('orders').select('total', { count: 'exact' }),
-    supabase.from('orders').select('total').gte('created_at', today),
-    supabase.from('orders').select('total').gte('created_at', `${thisMonth}-01`),
-    supabase.from('menu_items').select('*', { count: 'exact' }),
-  ]);
-
-  const totalRevenue = (ordersResult.data as any[])?.reduce((sum, order) => sum + order.total, 0) || 0;
-  const todayRevenue = (todayOrdersResult.data as any[])?.reduce((sum, order) => sum + order.total, 0) || 0;
-  const monthRevenue = (monthOrdersResult.data as any[])?.reduce((sum, order) => sum + order.total, 0) || 0;
-
+  
   return {
-    totalOrders: ordersResult.count || 0,
-    todayOrders: todayOrdersResult.data?.length || 0,
-    monthRevenue,
-    todayRevenue,
-    totalMenuItems: menuItemsResult.count || 0,
+    todayOnlineRevenue: demoData.analytics.todayRevenue * 0.65, // 65% online
+    todayLocalSales: demoData.analytics.todayRevenue * 0.35,   // 35% local
+    todayLocalOrders: demoData.localSales[0]?.estimated_orders || 0,
+    todayTotalRevenue: demoData.analytics.todayRevenue,
+    todayOnlineOrders: Math.floor(demoData.analytics.todayOrders * 0.65), // 65% online
+    totalOnlineOrders: demoData.analytics.monthlyOrders,
+    monthOnlineRevenue: demoData.analytics.todayRevenue * 20, // Estimado mensual
+    monthlyOrders: demoData.analytics.monthlyOrders,
+    todayOrders: demoData.analytics.todayOrders,
+    averageTicket: demoData.analytics.averageTicket,
+    onlinePercentage: demoData.analytics.onlinePercentage
   };
 }
 
@@ -39,34 +49,71 @@ async function getRecentOrders() {
   return (data || []) as Order[];
 }
 
-export default async function AdminDashboard() {
-  const stats = await getDashboardData();
-  const recentOrders = await getRecentOrders();
+export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    todayOnlineRevenue: 0,
+    todayLocalSales: 0,
+    todayLocalOrders: 0,
+    todayTotalRevenue: 0,
+    todayOnlineOrders: 0,
+    totalOnlineOrders: 0,
+    monthOnlineRevenue: 0,
+    monthlyOrders: 0,
+    todayOrders: 0,
+    averageTicket: 0,
+    onlinePercentage: 0
+  });
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [dashboardData, ordersData] = await Promise.all([
+          getDashboardData(),
+          getRecentOrders()
+        ]);
+        setStats(dashboardData);
+        setRecentOrders(ordersData);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const handleSalesUpdated = () => {
+    // Reload dashboard data when sales are updated
+    getDashboardData().then(setStats);
+  };
 
   const cards = [
     {
-      title: 'Ventas del Mes',
-      value: `S/. ${stats.monthRevenue.toFixed(2)}`,
+      title: 'Ventas Totales Hoy',
+      value: `S/. ${stats.todayTotalRevenue.toFixed(2)}`,
       icon: DollarSign,
-      description: `S/. ${stats.todayRevenue.toFixed(2)} hoy`,
+      description: `Online: S/. ${stats.todayOnlineRevenue.toFixed(2)} | Local: S/. ${stats.todayLocalSales.toFixed(2)}`,
+      highlight: true,
     },
     {
-      title: 'Pedidos Totales',
-      value: stats.totalOrders,
+      title: 'Ventas Online',
+      value: `S/. ${stats.todayOnlineRevenue.toFixed(2)}`,
+      icon: Globe,
+      description: `${stats.todayOnlineOrders} pedidos hoy`,
+    },
+    {
+      title: 'Ventas Locales',
+      value: `S/. ${stats.todayLocalSales.toFixed(2)}`,
+      icon: Store,
+      description: `${stats.todayLocalOrders} pedidos estimados`,
+    },
+    {
+      title: 'Pedidos Online del Mes',
+      value: stats.totalOnlineOrders,
       icon: ShoppingCart,
-      description: `${stats.todayOrders} hoy`,
-    },
-    {
-      title: 'Platos en Menú',
-      value: stats.totalMenuItems,
-      icon: UtensilsCrossed,
-      description: 'Platos disponibles',
-    },
-    {
-      title: 'Promedio por Pedido',
-      value: `S/. ${stats.totalOrders > 0 ? (stats.monthRevenue / stats.totalOrders).toFixed(2) : '0.00'}`,
-      icon: TrendingUp,
-      description: 'Este mes',
+      description: `S/. ${stats.monthOnlineRevenue.toFixed(2)} facturado`,
     },
   ];
 
@@ -81,21 +128,34 @@ export default async function AdminDashboard() {
 
   return (
     <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Dashboard Unificado</h1>
+        <div className="text-sm text-muted-foreground">
+          {new Date().toLocaleDateString('es-PE', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
+        </div>
+      </div>
 
+      {/* Unified Dashboard Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
         {cards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <Card key={index}>
+            <Card key={index} className={card.highlight ? 'border-primary shadow-md' : ''}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {card.title}
                 </CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <Icon className={`h-4 w-4 ${card.highlight ? 'text-primary' : 'text-muted-foreground'}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{card.value}</div>
+                <div className={`text-2xl font-bold ${card.highlight ? 'text-primary' : ''}`}>
+                  {card.value}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {card.description}
                 </p>
@@ -105,34 +165,93 @@ export default async function AdminDashboard() {
         })}
       </div>
 
+      {/* Local Sales Form and Recent Orders */}
+      <div className="grid gap-6 lg:grid-cols-2 mb-8">
+        <LocalSalesForm 
+          todayLocalSales={stats.todayLocalSales}
+          onSalesUpdated={handleSalesUpdated}
+        />
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Pedidos Online Recientes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentOrders.length > 0 ? (
+                recentOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div>
+                      <div className="font-semibold">{order.order_number}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {order.customer_name} - {order.customer_phone}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">S/. {order.total.toFixed(2)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {statusLabels[order.order_status] || order.order_status}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No hay pedidos online recientes</p>
+                  <p className="text-sm">Los pedidos aparecerán aquí automáticamente</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Business Insights */}
       <Card>
         <CardHeader>
-          <CardTitle>Pedidos Recientes</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Análisis del Negocio
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentOrders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div>
-                  <div className="font-semibold">{order.order_number}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {order.customer_name} - {order.customer_phone}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold">S/. {order.total.toFixed(2)}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {statusLabels[order.order_status] || order.order_status}
-                  </div>
-                </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold text-green-600">
+                {stats.todayTotalRevenue > 0 
+                  ? ((stats.todayOnlineRevenue / stats.todayTotalRevenue) * 100).toFixed(1)
+                  : '0'
+                }%
               </div>
-            ))}
+              <div className="text-sm text-muted-foreground">Ventas Online</div>
+            </div>
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.todayOnlineOrders + stats.todayLocalOrders}
+              </div>
+              <div className="text-sm text-muted-foreground">Total Pedidos Hoy</div>
+            </div>
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">
+                S/. {stats.todayTotalRevenue > 0 && (stats.todayOnlineOrders + stats.todayLocalOrders) > 0
+                  ? (stats.todayTotalRevenue / (stats.todayOnlineOrders + stats.todayLocalOrders)).toFixed(2)
+                  : '0.00'
+                }
+              </div>
+              <div className="text-sm text-muted-foreground">Ticket Promedio</div>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Business Reports & Analytics */}
+      <div className="mt-8">
+        <BusinessReports />
+      </div>
     </div>
   );
 }
