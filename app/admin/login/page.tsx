@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { Fish, Loader as Loader2 } from 'lucide-react';
 import { signIn, signUp } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -21,6 +22,32 @@ export default function AdminLoginPage() {
     password: '',
     confirmPassword: '',
   });
+  const { user, loading: authLoading } = useAuth();
+
+  // Si el usuario ya está autenticado, redirigir al admin
+  useEffect(() => {
+    if (!authLoading && user) {
+      console.log('👤 User already authenticated, redirecting to admin...');
+      router.push('/admin');
+    }
+  }, [user, authLoading, router]);
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-50">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Verificando autenticación...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Si ya está autenticado, no mostrar el formulario
+  if (user) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

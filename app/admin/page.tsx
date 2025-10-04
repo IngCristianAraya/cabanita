@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +12,8 @@ import {
   TrendingUp, 
   Users,
   Store,
-  Globe
+  Globe,
+  Loader2
 } from "lucide-react";
 import { LocalSalesForm } from "@/components/admin/local-sales-form";
 import { WhatsAppPanel } from "@/components/admin/whatsapp-panel";
@@ -50,6 +53,8 @@ async function getRecentOrders() {
 }
 
 export default function AdminDashboard() {
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState({
     todayOnlineRevenue: 0,
     todayLocalSales: 0,
@@ -65,6 +70,28 @@ export default function AdminDashboard() {
   });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('❌ No user found, redirecting to login...');
+      router.push('/admin/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="text-lg">Cargando panel de administración...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Será redirigido por el useEffect
+  }
 
   useEffect(() => {
     async function loadData() {
