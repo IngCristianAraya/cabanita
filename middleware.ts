@@ -1,81 +1,67 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+export async function middleware(request: NextRequest) {
+  // ✅ MIDDLEWARE RESTAURADO CON LÓGICA MEJORADA
+  console.log('🔍 Middleware ejecutándose para:', request.nextUrl.pathname);
   
-  console.log('🔍 Middleware executing for:', req.nextUrl.pathname);
-  
-  // Skip middleware for static files and API routes
-  if (
-    req.nextUrl.pathname.startsWith('/_next') ||
-    req.nextUrl.pathname.startsWith('/api') ||
-    req.nextUrl.pathname.includes('.')
-  ) {
-    console.log('⏭️ Skipping middleware for static/API route');
-    return res;
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Rutas públicas que no requieren autenticación
+  const publicRoutes = ['/login', '/api/auth', '/', '/menu', '/cart', '/checkout']
+  const isPublicRoute = publicRoutes.some(route => 
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
+  )
+
+  if (isPublicRoute) {
+    console.log('✅ Ruta pública permitida:', request.nextUrl.pathname);
+    return supabaseResponse
   }
 
-  const supabase = createMiddlewareClient({ req, res });
-
-  // Refresh session if expired - required for Server Components
-  console.log('🔄 Getting session...');
+  // Verificar sesión para rutas protegidas
   const {
     data: { session },
-  } = await supabase.auth.getSession();
-  
-  console.log('📋 Session status:', !!session);
+  } = await supabase.auth.getSession()
+
+  console.log('🔐 Verificando sesión para ruta protegida:', request.nextUrl.pathname);
+  console.log('👤 Sesión encontrada:', session ? `${session.user?.email}` : 'No hay sesión');
+
+  // Si no hay sesión y está intentando acceder a rutas admin
+  if (!session && request.nextUrl.pathname.startsWith('/admin')) {
+    console.log('❌ Sin sesión - Redirigiendo a /login');
+    const redirectUrl = new URL('/login', request.url)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  // Si hay sesión, permitir acceso
   if (session) {
-    console.log('👤 User email:', session.user.email);
+    console.log('✅ Sesión válida - Permitiendo acceso');
   }
 
-  // Protect admin routes
-  if (req.nextUrl.pathname.startsWith('/admin')) {
-    console.log('🔐 Processing admin route protection');
-    
-    // Allow access to login page
-    if (req.nextUrl.pathname === '/admin/login') {
-      console.log('🚪 Login page access');
-      // Always allow access to login page without automatic redirection
-      console.log('📝 Allowing access to login page');
-      return res;
-    }
-
-    // For all other admin routes, require authentication and admin validation
-    if (!session) {
-      console.log('❌ No session, redirecting to login');
-      return NextResponse.redirect(new URL('/admin/login', req.url));
-    }
-
-    console.log('🔍 Validating admin user for protected route...');
-    // Check if user has admin role by validating against admin_users table
-    const { data: adminUser, error: adminError } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('email', session.user.email)
-      .eq('is_active', true)
-      .single();
-
-    console.log('🔍 Admin validation result:', {
-      hasAdminUser: !!adminUser,
-      error: adminError?.message || 'No error',
-      userEmail: session.user.email,
-      pathname: req.nextUrl.pathname
-    });
-
-    if (adminError || !adminUser) {
-      console.log('❌ Admin validation failed, redirecting to login');
-      // Sign out the user if they're not a valid admin
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/admin/login', req.url));
-    }
-
-    console.log('✅ Admin validation successful, allowing access to:', req.nextUrl.pathname);
-  }
-
-  console.log('✅ Middleware completed successfully');
-  return res;
+  return supabaseResponse
 }
 
 export const config = {

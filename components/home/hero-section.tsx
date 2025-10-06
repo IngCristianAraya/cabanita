@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Clock, MapPin, Phone } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 export function HeroSection() {
   return (
@@ -27,13 +26,13 @@ export function HeroSection() {
           <div className="text-center lg:text-left space-y-8">
             {/* Logo */}
             <div className="flex justify-center lg:justify-start mb-8">
-              <Image
+              <img
                 src="/images/logo_cabañita.png"
                 alt="La Cabañita"
                 width={200}
                 height={120}
                 className="h-24 w-auto drop-shadow-2xl"
-                priority
+                loading="lazy"
               />
             </div>
 
@@ -89,7 +88,7 @@ export function HeroSection() {
           <div className="relative">
             <div className="relative z-10 bg-white/95 backdrop-blur rounded-3xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
               <div className="aspect-square rounded-2xl overflow-hidden">
-                <Image
+                <img
                   src="/images/ceviche.jpg"
                   alt="Ceviche Fresco - Plato Estrella de La Cabañita"
                   width={400}

@@ -17,7 +17,7 @@ export function AdminNavbar() {
       title: 'Sesión cerrada',
       description: 'Has cerrado sesión correctamente',
     });
-    router.push('/admin/login');
+    router.push('/login');
     router.refresh();
   };
 

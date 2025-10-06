@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Fish, ShoppingCart, Menu } from 'lucide-react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/cart-store';
 import { Badge } from '@/components/ui/badge';
@@ -26,13 +25,13 @@ export function Navbar() {
         <div className="container flex h-24 items-center justify-between">
           <Link href="/" className="flex items-center">
             <div className="relative h-18 w-auto">
-              <Image
+              <img
                 src="/images/logo_cabañita.png"
                 alt="La Cabañita Logo"
                 width={144}
                 height={144}
                 className="object-contain"
-                priority
+                loading="lazy"
               />
             </div>
           </Link>

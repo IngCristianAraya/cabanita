@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthAlternative } from '@/hooks/useAuthAlternative';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ async function getRecentOrders() {
 }
 
 export default function AdminDashboard() {
-  const { user, loading, signOut } = useAuth();
+  const auth = useAuthAlternative();
   const router = useRouter();
   const [stats, setStats] = useState({
     todayOnlineRevenue: 0,
@@ -72,13 +72,68 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      console.log('❌ No user found, redirecting to login...');
-      router.push('/admin/login');
+    // Inicializar el hook de autenticación si no está inicializado
+    if (!auth.initialized) {
+      console.log('🔄 Initializing auth in dashboard...');
+      auth.initialize();
+      return;
     }
-  }, [user, loading, router]);
 
-  if (loading) {
+    // Solo cargar datos si hay usuario autenticado
+    if (auth.initialized && !auth.loading && auth.user) {
+      async function loadData() {
+        try {
+          console.log('📊 Loading dashboard data...');
+          const [dashboardData, ordersData] = await Promise.all([
+            getDashboardData(),
+          getRecentOrders()
+        ]);
+        setStats(dashboardData);
+        setRecentOrders(ordersData);
+        console.log('✅ Dashboard data loaded successfully');
+        } catch (error) {
+          console.error('❌ Error loading dashboard data:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      loadData();
+    } else if (auth.initialized && !auth.loading && !auth.user) {
+      // Si no hay usuario, simplemente marcar como no loading
+      // El middleware ya se encarga de la redirección
+      console.log('❌ No user found, middleware will handle redirection');
+      setIsLoading(false);
+    }
+  }, [auth.user, auth.loading, auth.initialized]);
+
+  // ✅ VERIFICACIÓN DEL CLIENTE RESTAURADA CON LÓGICA MEJORADA
+  // Solo mostrar loading mientras se inicializa la autenticación
+  if (!auth.initialized) {
+    console.log('⏳ Esperando inicialización de autenticación...');
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no hay usuario después de la inicialización, el middleware se encargará de la redirección
+  if (!auth.user) {
+    console.log('⚠️ No hay usuario autenticado - El middleware debería redirigir');
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p>Redirigiendo al login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar loading mientras se cargan los datos del dashboard
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex items-center space-x-2">
@@ -88,28 +143,6 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
-  if (!user) {
-    return null; // Será redirigido por el useEffect
-  }
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [dashboardData, ordersData] = await Promise.all([
-          getDashboardData(),
-          getRecentOrders()
-        ]);
-        setStats(dashboardData);
-        setRecentOrders(ordersData);
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, []);
 
   const handleSalesUpdated = () => {
     // Reload dashboard data when sales are updated
